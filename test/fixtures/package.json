@@ -1,0 +1,9 @@
+{
+	"name": "app.index",
+	"dependencies": {
+		"zepto": "1.0.4",
+		"lib-lazyload": "1.1.0",
+		"lib-aplus": "1.1.0",
+		"lib-slider": "0.1.0"
+	}
+}

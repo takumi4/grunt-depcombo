@@ -1,0 +1,46 @@
+{
+  "name": "grunt-depcombo",
+  "description": "Generate combo url(file)",
+  "version": "0.1.0",
+  "homepage": "https://github.com/terrykingcha/grunt-depcombo",
+  "author": {
+    "name": "tERry.K",
+    "email": "terrykingcha@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:terrykingcha/grunt-depcombo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/terrykingcha/grunt-depcombo/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/terrykingcha/grunt-depcombo/blob/master/LICENSE-MIT"
+    }
+  ],
+  "main": "Gruntfile.js",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "dependencies": {
+    "serialize-deptree": "~0.1.0",
+    "curl": "~0.1.4"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.1.1",
+    "grunt-contrib-clean": "~0.4.0",
+    "grunt-contrib-nodeunit": "~0.1.2",
+    "grunt": "~0.4.1"
+  },
+  "peerDependencies": {
+    "grunt": "~0.4.1"
+  },
+  "keywords": [
+    "gruntplugin", "dependencies", "combo"
+  ]
+}

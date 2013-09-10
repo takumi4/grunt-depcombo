@@ -27,29 +27,29 @@ exports.deptree = {
     // setup here if necessary
     done();
   },
-  concat_js: function(test) {
+  url: function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/concat.js');
-    var expected = grunt.file.read('test/expected/concat.js');
+    var actual = grunt.file.read('tmp/combo.url.js').replace(/combo_url_\d+/gi, 'combo_url');
+    var expected = grunt.file.read('test/expected/combo.url.js');
     test.equal(actual, expected, 'not equal');
 
     test.done();
   },
-  concat_css: function(test) {
+  file: function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/concat.css');
-    var expected = grunt.file.read('test/expected/concat.css');
+    var actual = grunt.file.read('tmp/combo.file.js');
+    var expected = grunt.file.read('test/expected/combo.file.js');
     test.equal(actual, expected, 'not equal');
 
     test.done();
   },
-  concat_tree: function(test) {
+  replace: function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/concat.tree');
-    var expected = grunt.file.read('test/expected/concat.tree');
+    var actual = grunt.file.read('tmp/index.html').replace(/combo_url_\d+/gi, 'combo_url');
+    var expected = grunt.file.read('test/expected/index.html');
     test.equal(actual, expected, 'not equal');
 
     test.done();

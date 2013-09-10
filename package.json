@@ -41,6 +41,6 @@
     "grunt": "~0.4.1"
   },
   "keywords": [
-    "gruntplugin", "dependencies", "combo"
+    "gruntplugin", "dependencies", "combo", "gitlab"
   ]
 }

@@ -8,13 +8,14 @@
 'use strict';
 
 var path = require('path'),
+    fs = require('fs'),
     util = require('util'),
     curl = require('curl'),
     deptree = require('serialize-deptree'),
 
-    PUBLISH_BASE_URL = 'http://g.tbcdn.com/mtb/',
-    DAILY_BASE_URL = 'http://g.assets.daily.taobao.net/mtb/',
-    COMBO_TEMPLATE = 'document.write(\'<scr\' + \'ipt type="text/javascript" src="{$url}"></scr\' + \'ipt>\')';
+    PUBLISH_DOMAIN = 'http://g.tbcdn.com/',
+    DAILY_DOMAIN = 'http://g.assets.daily.taobao.net/',
+    COMBO_TEMPLATE = 'document.write(\'<scr\' + \'ipt id="combo_url_{$id}" type="text/javascript" src="{$url}"></scr\' + \'ipt>\')';
 
 module.exports = function(grunt) {
   // Please see the Grunt documentation for more information regarding task
@@ -23,102 +24,102 @@ module.exports = function(grunt) {
   grunt.registerMultiTask('depcombo', 'Generate combo url(file)', function() {
     // Merge task-specific and/or target-specific options with these defaults.
     var done = this.async(),
-
         options = this.options({
-          baseUrl: '',
+          domain: '',
+          baseUrl: 'mtb/',
           prefix: '??',
           separator: ',',
           output: 'url',
           useDaily: false,
           useDebug: false,
-          appendTo: null.
-          appendPatternBegin: '\\<\\!\\-\\-\\s+combo\\s+begin\\s+\\-\\-\\>',
-          appendPatternEnd: '\\<\\!\\-\\-\\s+combo\\s+end\\s+\\-\\-\\>'
+          pattern: '<script id="combo_url_{$id:[^"]+}" src="{$src:[^"]+}"></script>',
           except: []
         }),
-        dependencies = options.dependencies || grunt.file.readJSON('package.json').dependenices,
-        baseUrl = options.baseUrl || options.useDaily?DAILY_BASE_URL:PUBLISH_BASE_URL;
+        mainPkg = options.pkg || grunt.file.readJSON('package.json'),
+        domain = options.domain || options.useDaily?DAILY_DOMAIN:PUBLISH_DOMAIN;
 
     this.files.forEach(function(f) {
-      if (dependencies) {
+      if (mainPkg) {
         var tree = {}, map = {}, dest = f.dest;
 
-        (function iterateFunction(deps, callback) {
-            var complete = 0, depsName = Object.keys(deps);
+        (function iterateFunction(pkg, callback) {
+            var name = pkg.name.replace('.', '-'), 
+                version = pkg.version, 
+                deps = pkg.dependencies || [], 
+                key = name + '@' + version,
+                complete = 0, depsName = Object.keys(deps), deplist;
 
-            depsName.forEach(function(name) {
-              var version = deps[name],
-                  key = name + '@' + version,
-                  names = name.split('/'),
-                  projName, fileName;
+            if (tree.hasOwnProperty(key)) {return callback();}
 
-              if (tree.hasOwnProperty(key)) return callback();
+            deplist = tree[key] = [];
+            map[key] = {
+              projPath: name + '/' + version + '/',
+              filePath: name.indexOf('-') > -1?name.split('-')[1]:name
+            };
 
-              tree[key] = [];
-              projName = names[0] + '/' + version + '/';
-              if (names.length > 1) {
-                fileName = names.slice(1).join('/');
-              } else {
-                fileName = (names[0].indexOf('-') > -1?names[0].split('-')[1]:names[0]);
+            if (!depsName.length) {return callback();}
+
+            for (var i = 0; i < options.except.length; i++) {
+              if (name.indexOf(options.except[i]) > -1) {
+                return callback();
               }
+            }
 
-              map[key] = {
-                projName : projName,
-                fileName : fileName
-              };
+            depsName.forEach(function(depName) {
+              var depVersion = deps[depName], depKey, packageUrl;
 
-              curl.get(baseUrl + projName + 'package.json', function(err, response, body) {
+              depName = depName.replace('.', '-');
+
+              depKey = depName + '@' + depVersion;
+              packageUrl = domain + options.baseUrl + depName.split('/')[0] + '/' + depVersion + '/package.json';
+
+              deplist.push(depKey);
+
+              curl.get(packageUrl, function(err, response, body) {
                 var pkg;
 
-                if (body) {
-                  try {
+                try {
+                  if (body) {
                     pkg = JSON.parse(body);
-                  } catch(e) {
-                    throw new Error('"' + baseUrl + projName + 'package.json" is unexcepted');
                   }
+                } catch(e) {
+                  grunt.log.warn('"' + packageUrl + '" is unexcepted');
+                }
 
-                  if (pkg.dependencies) {
-                    for (var name in pkg.dependencies) {
-                      tree[key].push(name + '@' + pkg.dependencies[name]);
-                    }
-
-                    iterateFunction(pkg.dependencies, function() {
-                      if (++complete === depsName.length) {
-                        callback();
-                      }
-                    });
-                  } else {
+                if (pkg) {
+                  iterateFunction(pkg, function() {
                     if (++complete === depsName.length) {
                       callback();
                     }
-                  }
+                  });
                 } else {
+                  grunt.log.warn('"' + packageUrl + '" is unexcepted');
                   if (++complete === depsName.length) {
                     callback();
                   }
                 }
               });
             });
-        })(dependencies, function() {
+        })(mainPkg, function() {
           var serialized = deptree.serialize(tree).map(function(key) {
-                var projName = map[key].projName,
-                    fileName = map[key].fileName;
+                var projPath = map[key].projPath,
+                    filePath = map[key].filePath;
 
                 for (var i = 0; i < options.except.length; i++) {
                   var name = options.except[i];
-                  if (projName.indexOf(name) > -1) {
+                  if (projPath.indexOf(name) > -1) {
                     return;
                   }
                 }
 
-                return projName + fileName + (options.useDebug?'.debug':'') + '.js';
+                return projPath + filePath + (options.useDebug?'.debug':'') + '.js';
               }).filter(function(f) {
                 return f;
               }),
-              comboUrl = baseUrl + options.prefix + serialized.join(options.separator);
+              comboUrl = domain + options.baseUrl + options.prefix + serialized.join(options.separator);
 
           if (options.output === 'url') {
-            grunt.file.write(dest, COMBO_TEMPLATE.replace('{$url}', comboUrl));
+            grunt.file.write(dest, COMBO_TEMPLATE.replace('{$url}', comboUrl).replace('{$id}', Date.now()));
             grunt.log.writeln('Dest File "' + dest + '" created.');
             done();
           } else if (options.output === 'file') {
@@ -127,20 +128,25 @@ module.exports = function(grunt) {
               grunt.log.writeln('Dest File "' + dest + '" created.');
               done();
             });
-          } else if (options.output === 'html') {
-            var appendTo = options.appendTo || 'index.html',
-                appendPatternBegin = options.appendPatternBegin,
-                appendPatternEnd = options.appendPatternEnd;
+          } else if (options.output === 'replace') {
+            var html = grunt.file.read(dest),
+                reg = new RegExp(options.pattern.replace(/\{\$\w+\:([^}]+)\}/gi, '$1'), 'gi'),
+                tag = options.pattern.replace(/\{\$id\:[^}]+\}/i, Date.now())
+                          .replace(/\{\$src\:[^}]+\}/i, comboUrl);
 
-            var html = grunt.file.read(appendTo);
+            if (reg.test(html)) {
+              html = html.replace(reg, tag);
+            } else {
+              html = html.replace('<body>',  tag + grunt.util.linefeed + '<body>');
+            }
 
-            html.replace(new RegExp('(' + appendPatternBegin + ')([.\\r\\n\\s]*?)(' + appendPatternEnd + ')', 'gi'), function() {
-              return '$1' + grunt.util.linefeed + COMBO_TEMPLATE.replace('{$url}', comboUrl) + grunt.util.linefeed + '$3';
-            });
+            grunt.file.write(dest, html);
+            grunt.log.writeln('Dest File "' + dest + '" replaced.');
+            done();
           }
         });
       } else {
-        grunt.log.error('specific "dependencies" field in options');
+        grunt.log.error('specific "pkg" field in options');
       }
     });
   });

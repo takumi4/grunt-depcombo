@@ -28,6 +28,14 @@ module.exports = function(grunt) {
       tests: ['tmp'],
     },
 
+    copy: {
+      replace: {
+        files: [
+          {expand: true, cwd: 'test/fixtures/', src: ['*.html'], dest: 'tmp/'}
+        ]
+      }
+    },
+
     // Configuration to be run (and then tested).
     depcombo: {
       url: {
@@ -35,7 +43,7 @@ module.exports = function(grunt) {
           useDaily: true,
           separator: ',',
           output: 'url',
-          dependencies: grunt.file.readJSON('test/fixtures/package.json').dependencies
+          pkg: grunt.file.readJSON('test/fixtures/package.json')
         },
         dest: 'tmp/combo.url.js'
       },
@@ -47,9 +55,18 @@ module.exports = function(grunt) {
           separator: ',',
           except: ['zepto'],
           output: 'file',
-          dependencies: grunt.file.readJSON('test/fixtures/package.json').dependencies
+          pkg: grunt.file.readJSON('test/fixtures/package.json')
         },
         dest: 'tmp/combo.file.js'
+      },
+
+      replace: {
+        options: {
+          useDaily: true,
+          output: 'replace',
+          pkg: grunt.file.readJSON('test/fixtures/package.json')
+        },
+        dest: 'tmp/index.html'
       }
     },
 
@@ -67,10 +84,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
+  grunt.loadNpmTasks('grunt-contrib-copy');
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['clean', 'depcombo',  'nodeunit']);
+  grunt.registerTask('test', ['clean', 'copy', 'depcombo', 'nodeunit']);
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);

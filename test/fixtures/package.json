@@ -1,5 +1,6 @@
 {
 	"name": "app.index",
+	"version": "0.2.0",
 	"dependencies": {
 		"zepto": "1.0.4",
 		"lib-lazyload": "1.1.0",

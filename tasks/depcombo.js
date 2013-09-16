@@ -103,8 +103,15 @@ module.exports = function(grunt) {
         })(mainPkg, function() {
           var serialized = deptree.serialize(tree).map(function(key) {
           	    if (!map[key]) return '';
+
                 var projPath = map[key].projPath,
                     filePath = map[key].filePath;
+
+                if (options.useDebug && 
+                    options.output === 'url' && 
+                    new RegExp(mainPkg.name.replace(/(lib|app)\./gi, '')).test(filePath)) {
+                  return '';
+                }
 
                 for (var i = 0; i < options.except.length; i++) {
                   var name = options.except[i];
@@ -116,11 +123,25 @@ module.exports = function(grunt) {
                 return projPath + filePath + (options.useDebug?'.debug':'') + '.js';
               }).filter(function(f) {
                 return f;
-              }),
+              }), comboUrl = '';
+
+          if (serialized.length) {
               comboUrl = domain + options.baseUrl + options.prefix + serialized.join(options.separator);
+          }
 
           if (options.output === 'url') {
-            grunt.file.write(dest, COMBO_TEMPLATE.replace('{$url}', comboUrl).replace('{$id}', Date.now()));
+            var filecontent = '';
+
+            if (options.useDebug) {
+              if (comboUrl) {
+                filecontent += COMBO_TEMPLATE.replace('{$url}', comboUrl).replace('{$id}', Date.now()) + grunt.util.linefeed;
+              }
+              filecontent += COMBO_TEMPLATE.replace('{$url}', 'build/' + mainPkg.name.replace(/(lib|app)\./ig, '') + '.debug.js').replace('{$id}', 'main');
+            } else {
+              filecontent = COMBO_TEMPLATE.replace('{$url}', comboUrl).replace('{$id}', Date.now());
+            }
+
+            grunt.file.write(dest, filecontent);
             grunt.log.writeln('Dest File "' + dest + '" created.');
             done();
           } else if (options.output === 'file') {

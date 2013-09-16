@@ -45,7 +45,7 @@ module.exports = function(grunt) {
         (function iterateFunction(pkg, callback) {
             var name = pkg.name.replace('.', '-'), 
                 version = pkg.version, 
-                deps = pkg.dependencies || [], 
+                deps = pkg.combo || [], 
                 key = name + '@' + version,
                 complete = 0, depsName = Object.keys(deps), deplist;
 

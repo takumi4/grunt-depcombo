@@ -102,6 +102,7 @@ module.exports = function(grunt) {
             });
         })(mainPkg, function() {
           var serialized = deptree.serialize(tree).map(function(key) {
+          	    if (!map[key]) return '';
                 var projPath = map[key].projPath,
                     filePath = map[key].filePath;
 

@@ -13,7 +13,7 @@ var path = require('path'),
     curl = require('curl'),
     deptree = require('serialize-deptree'),
 
-    PUBLISH_DOMAIN = 'http://g.tbcdn.com/',
+    PUBLISH_DOMAIN = 'http://g.tbcdn.cn/',
     DAILY_DOMAIN = 'http://g.assets.daily.taobao.net/',
     COMBO_TEMPLATE = 'document.write(\'<scr\' + \'ipt id="combo_url_{$id}" type="text/javascript" src="{$url}"></scr\' + \'ipt>\')';
 

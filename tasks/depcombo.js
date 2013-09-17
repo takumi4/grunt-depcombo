@@ -95,8 +95,6 @@ module.exports = function(grunt) {
               });
             });
         })(mainPkg, mainPkg.name.replace('.', '-'), mainPkg.version, function() {
-          console.log(tree);
-
           var serialized = deptree.serialize(tree).map(function(key) {
                 KEY_REGEXP.lastIndex = 0;
           	    var matches = KEY_REGEXP.exec(key);

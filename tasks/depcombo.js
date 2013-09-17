@@ -15,7 +15,8 @@ var path = require('path'),
 
     PUBLISH_DOMAIN = 'http://g.tbcdn.cn/',
     DAILY_DOMAIN = 'http://g.assets.daily.taobao.net/',
-    COMBO_TEMPLATE = 'document.write(\'<scr\' + \'ipt id="combo_url_{$id}" type="text/javascript" src="{$url}"></scr\' + \'ipt>\')';
+    COMBO_TEMPLATE = 'document.write(\'<scr\' + \'ipt id="combo_url_{$id}" type="text/javascript" src="{$url}"></scr\' + \'ipt>\')',
+    KEY_REGEXP = /([^\/\@]+)(?:\/([^@]+))?\@([\d\.]+)/gi;
 
 module.exports = function(grunt) {
   // Please see the Grunt documentation for more information regarding task
@@ -40,22 +41,16 @@ module.exports = function(grunt) {
 
     this.files.forEach(function(f) {
       if (mainPkg) {
-        var tree = {}, map = {}, dest = f.dest;
+        var tree = {}, dest = f.dest;
 
-        (function iterateFunction(pkg, callback) {
-            var name = pkg.name.replace('.', '-'), 
-                version = pkg.version, 
-                deps = pkg.combo || [], 
+        (function iterateFunction(pkg, name, version, callback) {
+            var deps = pkg.combo || [],
                 key = name + '@' + version,
                 complete = 0, depsName = Object.keys(deps), deplist;
 
             if (tree.hasOwnProperty(key)) {return callback();}
 
             deplist = tree[key] = [];
-            map[key] = {
-              projPath: name + '/' + version + '/',
-              filePath: name.indexOf('-') > -1?name.split('-')[1]:name
-            };
 
             if (!depsName.length) {return callback();}
 
@@ -69,7 +64,6 @@ module.exports = function(grunt) {
               var depVersion = deps[depName], depKey, packageUrl;
 
               depName = depName.replace('.', '-');
-
               depKey = depName + '@' + depVersion;
               packageUrl = domain + options.baseUrl + depName.split('/')[0] + '/' + depVersion + '/package.json';
 
@@ -87,7 +81,7 @@ module.exports = function(grunt) {
                 }
 
                 if (pkg) {
-                  iterateFunction(pkg, function() {
+                  iterateFunction(pkg, depName, depVersion, function() {
                     if (++complete === depsName.length) {
                       callback();
                     }
@@ -100,11 +94,19 @@ module.exports = function(grunt) {
                 }
               });
             });
-        })(mainPkg, function() {
+        })(mainPkg, mainPkg.name.replace('.', '-'), mainPkg.version, function() {
+          console.log(tree);
+
           var serialized = deptree.serialize(tree).map(function(key) {
-          	    if (!map[key]) return '';
-                var projPath = map[key].projPath,
-                    filePath = map[key].filePath;
+                KEY_REGEXP.lastIndex = 0;
+          	    var matches = KEY_REGEXP.exec(key);
+
+                if (!matches) return;
+
+                var projName = matches[1],
+                    projPath = projName + '/' + matches[3] + '/',
+                    names = projName.split('-'),
+                    filePath = matches[2] || names[1] || names[0];
 
                 for (var i = 0; i < options.except.length; i++) {
                   var name = options.except[i];

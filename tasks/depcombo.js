@@ -106,8 +106,8 @@ module.exports = function(grunt) {
                     names = projName.split('-'),
                     filePath = matches[2] || names[1] || names[0];
                 
-                if (options.useDebug && 
-                    options.output === 'url' && 
+                if ((options.useDebug && 
+                    options.output === 'url'  || options.output === 'file') && 
                     new RegExp(mainPkg.name.replace(/(lib|app)\./gi, '')).test(filePath)) {
                   return '';
                 }
@@ -146,7 +146,9 @@ module.exports = function(grunt) {
             done();
           } else if (options.output === 'file') {
             curl.get(comboUrl, function(err, response, body) {
-              grunt.file.write(dest, body);
+              var mainFileContent = grunt.file.read('build/' + mainPkg.name.replace(/(lib|app)\./ig, '') + (options.useDebug?'.debug':'') + '.js')
+
+              grunt.file.write(dest, body + mainFileContent);
               grunt.log.writeln('Dest File "' + dest + '" created.');
               done();
             });

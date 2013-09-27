@@ -148,7 +148,7 @@ module.exports = function(grunt) {
             curl.get(comboUrl, function(err, response, body) {
               var mainFileContent = grunt.file.read('build/' + mainPkg.name.replace(/(lib|app)\./ig, '') + (options.useDebug?'.debug':'') + '.js')
 
-              grunt.file.write(dest, body + mainFileContent);
+              grunt.file.write(dest, (body||'') + mainFileContent);
               grunt.log.writeln('Dest File "' + dest + '" created.');
               done();
             });
